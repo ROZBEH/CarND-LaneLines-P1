@@ -4,5 +4,5 @@
 <img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
 
 For write up please refer to Report-CarND-LaneLines-P1.pdf
-This README will be updated soon.
-Thanks
+<br>This README will be updated soon.</br>
+<br>Thanks</br>
