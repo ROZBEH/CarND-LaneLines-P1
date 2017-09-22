@@ -6,52 +6,80 @@
 Overview
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
-
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
-
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
+First all helper functions that will be needed during the pipeline are added under “Helper Functions” section in the code *P1.ipynb*. Each one of them will be described during pipeline description. Some of which are being provided by Udacity and some others are added as part of this project.  The main code that is being used for this project also works for the *Challenge*. In other words the code is good enough to work on the Challenge video as well. I used this [link](https://goo.gl/Yzyr73) for some parts of my code base specially extracting white and yellow sections of the line.
+<br></br>
+<br>Note1: When we talk about images it could also mean a frame of the video that we are processing.</br>
+<br></br>
 
 
-Creating a Great Writeup
+
+Part1: Pipeline
 ---
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
+*The pipeline along with the corresponding python function or helper function is described. For more details please refer to the code P1.ipynb*
 
-1. Describe the pipeline
+<br></br>
+I. Reading input images/videos. ```mpimg.imread()```
+<br></br>
+II. Changing RGB pixel values into HLS. ```rgb_to_hls()```
+<br></br>
+III. Defining some threshold in order to extract white and yellow sections of the image and using it as a mask on the image itself for separating pixels with those ```colors.yellow_section() white_section() cv2.bitwise_or() cv2.bitwise_and()```.
+<br></br>
+IV. Converting the filtered images into gray scale for edge detection. ```grayscale()```
+<br></br>
+V. Using Gaussian filter in order to blur the gray scale image. Doing so will decrease the amount of noise and make it ready for edge detection which is next stage. ```gaussian_blur()```
+<br></br>
+VI. Using Open CV canny edge detection package for detecting edges from previous blurred image. ```canny()```
+<br></br>
+VII. Defining region of interest (ROI) that we would like to draw lane lines inside the image. Region of interest is based on x-y coordinates and is polygon-shaped area that is specified manually in the code. One of the future works that we’ll cover in the conclusion could be to automatically extract region of interest. By having x-y coordinates of region of interest, all other areas that are outside polygon will be ignored and just the area inside polygon will considered for the next step. ```region_of_interest()```
+<br></br>
+VIII.	Hough line transform will be used to extract the edges that form a line inside ROI. Since all other areas outside ROI are ignored, Hough line transform looks for edges that form a line inside the region of interest. Once the lines are extracted, these lines will be drawn on the input image which will result in the first output of our pipeline as shown below. ```hough_lines() draw_lines()```
+<br></br>
+<img src="test_images/out_write/whiteCarLaneSwitch_.jpg" width="480" alt="Combined Image" />
+<br></br>
+IX.	In order to connect the lines segments together and form a straight line we need to separate left and right lines from each other. Hough transform output lines will be used, those that have negative slope will be categorized as left segment and the ones with positive slope as right segments. ```left_right()```
+<br></br>
+X.	Now, there are two categories of lines. Lines on the left side of the region and lines on the right side of the region. All lines on the left side of the region need to be extrapolated and be represented as a single line, the same is true for the lines on the right side of the region of interest. We just describe the details about the lines on the left side of the ROI, the same can be generalized for the lines on the right side of the ROI. In order to represent multiple lines on the left side of the ROI as a single line, we first get ride of the lines that their slope is not in a certain threshold gap, because those lines might be cracks in the road, tree branches, shadows, car windshield cracks, etc. The remaining lines are passed into a linear regressor and it will return the slop and intercept of the line. ```slope_intercept(), slope_2_line()```
+<br></br>
+XI.	Now there are two lane lines, one on the right and one on the left. We just add this line to the original image and the result is shown below. ```draw_lane()```
+<br></br>
+<img src="test_images/out_write/whiteCarLaneSwitch_Lane.jpg" width="480" alt="Combined Image" />
+<br></br>
+XII.In order to draw lane lines on a video moviepy package will be used. Udacity already provided the code, I just put my code in the form of a function. This function returns the extrapolated right and left lanes for each video frame. Moviepy will take care of the rest of it and connects all frames to each other so that we can see continues video. ```videoFileClip() fl_image() write_videofile()```
+<br></br>
+XIII.The code that we developed is robust enough to work for the challenge videos.
+<br></br>
 
-2. Identify any shortcomings
 
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
+Shortcomings
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+There are two major shortcomings with this approach:
+<br></br>
+I.Right now user specifies the corners of the polygon in order to construct the area of interest. This could be tedious for the real world applications since area of interest is not always the same for all road, video quality. As a result this approach might not be generalizable to cases in which there are multiple lines and also cases in which video frame sizes are different from our videos.
+<br></br>
+II.	There is small jittering on the lane lines (red/blue line). Ideally we want to get rid of this jittering. We want to use these identified lane lines to steer the wheel in the right direction, having these jittering can possibly make the wheels to steer unnecessarily.
+<br></br>
+Possible Improvements
+---
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+I. I can think of three ways to choose region of interests automatically:
+-a. Developing a new way for identifying the region of interest. In this approach we can start with some region of interest that corresponds to the frame size and then start detecting the lines in that region. In order to check the validity of the extracted lines we could construct a feedback loop that checks whether the lines are in certain threshold. If not we increase the region of interest size until we get to our desired lane lines.
+-b. Camera calibration on the car: This way we always know where the lines are going to be and look for lines in those areas.
+II. One of the possible reasons for extracted lane line jittering could be calculation that is being done for each frame. Right now the algorithm tries to find the slope and intercept for each frame separately, which in turn updates extracted red/blue lines on the output video. Due to possible tiny changes in consecutive frames, the jittering happens in the final line lanes. In order to improve these, the line could be the average of the previous few frames and make the change very smooth so that we can have smoother line changes in the output video. 
+III. Skipping some of the frames in order to speed up the process. If the video has 30 frames per second, the same computations are being done 30 times over 1 second period of time. This could be speed up by skipping the frames that are almost the same as the previous frames.
 
-**Step 2:** Open the code in a Jupyter Notebook
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
 
-`> jupyter notebook`
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+
+
+
+
+
+
+
 
 
