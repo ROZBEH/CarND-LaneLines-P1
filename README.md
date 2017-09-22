@@ -65,9 +65,9 @@ Possible Improvements
 
 I. I can think of three ways to choose region of interests automatically:
 <br></br>
-a. Developing a new way for identifying the region of interest. In this approach we can start with some region of interest that corresponds to the frame size and then start detecting the lines in that region. In order to check the validity of the extracted lines we could construct a feedback loop that checks whether the lines are in certain threshold. If not we increase the region of interest size until we get to our desired lane lines.
+&nbsp;a. Developing a new way for identifying the region of interest. In this approach we can start with some region of interest that corresponds to the frame size and then start detecting the lines in that region. In order to check the validity of the extracted lines we could construct a feedback loop that checks whether the lines are in certain threshold. If not we increase the region of interest size until we get to our desired lane lines.
 <br>
-b. Camera calibration on the car: This way we always know where the lines are going to be and look for lines in those areas.
+&nbsp;b. Camera calibration on the car: This way we always know where the lines are going to be and look for lines in those areas.
 </br>
 <br>
 II. One of the possible reasons for extracted lane line jittering could be calculation that is being done for each frame. Right now the algorithm tries to find the slope and intercept for each frame separately, which in turn updates extracted red/blue lines on the output video. Due to possible tiny changes in consecutive frames, the jittering happens in the final line lanes. In order to improve these, the line could be the average of the previous few frames and make the change very smooth so that we can have smoother line changes in the output video. 
