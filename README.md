@@ -72,8 +72,9 @@ I. I can think of three ways to choose region of interests automatically:
 <br>
 II. One of the possible reasons for extracted lane line jittering could be calculation that is being done for each frame. Right now the algorithm tries to find the slope and intercept for each frame separately, which in turn updates extracted red/blue lines on the output video. Due to possible tiny changes in consecutive frames, the jittering happens in the final line lanes. In order to improve these, the line could be the average of the previous few frames and make the change very smooth so that we can have smoother line changes in the output video. 
 </br>
+<br>
 III. Skipping some of the frames in order to speed up the process. If the video has 30 frames per second, the same computations are being done 30 times over 1 second period of time. This could be speed up by skipping the frames that are almost the same as the previous frames.
-<br></br>
+</br>
 
 
 
